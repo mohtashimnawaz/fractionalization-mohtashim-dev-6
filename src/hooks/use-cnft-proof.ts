@@ -3,7 +3,7 @@
  */
 
 import { useQuery } from '@tanstack/react-query';
-import { getAssetProof, AssetProof } from '@/lib/helius';
+import type { AssetProof } from '@/lib/helius';
 
 /**
  * Fetch Merkle proof for a compressed NFT
@@ -15,7 +15,12 @@ const fetchCNFTProof = async (
   if (!assetId) return null;
 
   try {
-    return await getAssetProof(assetId);
+    const res = await fetch(`/api/helius/getAssetProof?assetId=${encodeURIComponent(assetId)}`);
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err?.error || res.statusText || 'Failed to fetch proof');
+    }
+    return (await res.json()) as AssetProof;
   } catch (error) {
     console.error('Failed to fetch cNFT proof:', error);
     throw new Error(

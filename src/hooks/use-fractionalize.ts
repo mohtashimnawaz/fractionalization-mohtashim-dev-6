@@ -6,7 +6,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { PublicKey } from '@solana/web3.js';
-import { getAssetProof, proofToAccounts } from '@/lib/helius';
+import { proofToAccounts as clientProofToAccounts } from '@/lib/helius-utils';
 import { useWallet } from '@/components/solana/solana-provider';
 
 interface FractionalizeParams {
@@ -32,7 +32,12 @@ const fractionalizeCompressedNFT = async (
   try {
     // Step 1: Fetch Merkle proof from Helius
     console.log('Fetching Merkle proof for cNFT:', params.nftMint);
-    const proof = await getAssetProof(params.nftMint);
+    const res = await fetch(`/api/helius/getAssetProof?assetId=${encodeURIComponent(params.nftMint)}`);
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err?.error || res.statusText || 'Failed to fetch proof');
+    }
+    const proof = await res.json();
     
     if (!proof || !proof.proof) {
       throw new Error('Failed to fetch valid Merkle proof');
@@ -45,7 +50,7 @@ const fractionalizeCompressedNFT = async (
     });
 
     // Step 2: Convert proof to PublicKey array for remaining_accounts
-    const proofAccounts = proofToAccounts(proof);
+  const proofAccounts = clientProofToAccounts(proof);
     const treePublicKey = new PublicKey(proof.tree_id);
 
     console.log('Proof accounts:', proofAccounts.length);

@@ -3,7 +3,7 @@
  */
 
 import { useQuery } from '@tanstack/react-query';
-import { getAsset, DASAsset } from '@/lib/helius';
+import type { DASAsset } from '@/lib/helius';
 
 /**
  * Fetch detailed asset information for a specific cNFT
@@ -12,7 +12,13 @@ const fetchCNFTAsset = async (assetId?: string): Promise<DASAsset | null> => {
   if (!assetId) return null;
 
   try {
-    return await getAsset(assetId);
+    const res = await fetch(`/api/helius/getAsset?assetId=${encodeURIComponent(assetId)}`);
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err?.error || res.statusText || 'Failed to fetch asset');
+    }
+
+    return (await res.json()) as DASAsset;
   } catch (error) {
     console.error('Failed to fetch cNFT asset:', error);
     throw new Error(
