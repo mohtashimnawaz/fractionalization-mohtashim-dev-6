@@ -17,52 +17,33 @@ const mintCompressedNFT = async (
   params: MintCNFTParams,
   walletAddress: string
 ): Promise<{ assetId: string; signature?: string }> => {
-  const heliusApiKey = process.env.NEXT_PUBLIC_HELIUS_API_KEY;
-  
-  if (!heliusApiKey) {
-    throw new Error('Helius API key not configured');
-  }
+  // Call server API route instead of Helius directly to avoid exposing API key
+  const response = await fetch('/api/helius/mintCompressedNft', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      name: params.name,
+      symbol: params.symbol,
+      owner: walletAddress,
+      description: params.description,
+      imageUrl: params.imageUrl,
+    }),
+  });
 
-  const response = await fetch(
-    `https://devnet.helius-rpc.com/?api-key=${heliusApiKey}`,
-    {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        jsonrpc: '2.0',
-        id: 'mint-cnft',
-        method: 'mintCompressedNft',
-        params: {
-          name: params.name,
-          symbol: params.symbol,
-          owner: walletAddress,
-          description: params.description || 'A compressed NFT for testing fractionalization',
-          attributes: [
-            { trait_type: 'Type', value: 'Compressed' },
-            { trait_type: 'Network', value: 'Devnet' },
-            { trait_type: 'Created', value: new Date().toISOString() },
-          ],
-          imageUrl: params.imageUrl || 'https://via.placeholder.com/400/6366f1/ffffff?text=cNFT',
-          externalUrl: 'https://example.com',
-          sellerFeeBasisPoints: 500,
-        },
-      }),
-    }
-  );
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({}));
+    throw new Error(error?.error || response.statusText || 'Failed to mint cNFT');
+  }
 
   const data = await response.json();
 
-  if (data.error) {
-    throw new Error(data.error.message || 'Failed to mint cNFT');
-  }
-
-  if (!data.result?.assetId) {
+  if (!data.assetId) {
     throw new Error('No asset ID returned from mint');
   }
 
   return {
-    assetId: data.result.assetId,
-    signature: data.result.signature,
+    assetId: data.assetId,
+    signature: data.signature,
   };
 };
 

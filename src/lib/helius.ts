@@ -11,7 +11,7 @@
  * 
  * You MUST:
  * 1. Create a real cNFT on Solana devnet
- * 2. Add NEXT_PUBLIC_HELIUS_API_KEY to .env.local
+ * 2. Add HELIUS_API_KEY to server environment (Vercel env vars for production)
  * 3. Connect wallet that owns the cNFT
  * 
  * See CNFT_SETUP.md for instructions.
@@ -140,7 +140,7 @@ async function callDASApi<T>(method: string, params: unknown): Promise<T> {
   if (!HELIUS_API_KEY) {
     // Keep strict here so server-side callers are alerted to missing config.
     throw new Error(
-      'Helius API key not configured. Please add NEXT_PUBLIC_HELIUS_API_KEY (or HELIUS_API_KEY) to your environment.'
+      'Helius API key not configured. Please add HELIUS_API_KEY to your server environment.'
     );
   }
 
